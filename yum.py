@@ -1,5 +1,6 @@
 import csv
 import datetime
+import os
 from argparse import ArgumentParser
 from random import randint
 
@@ -26,6 +27,11 @@ def find_last_visited_restaurants(number_of_restaurant_to_keep):
     :return:
         List[int] The restaurants ids
     """
+
+    exists = os.path.exists(HISTORY_FILE)
+    if not exists:
+        open(HISTORY_FILE, 'x')
+
     with open(HISTORY_FILE, 'r+') as visited_restaurants:
         full_history = visited_restaurants.readlines()
         last_five_restaurants = full_history[-number_of_restaurant_to_keep:]
