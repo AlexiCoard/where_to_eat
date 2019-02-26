@@ -20,6 +20,7 @@ class Restaurant:
 
 NUMBER_OF_VISITED_RESTAURANTS_TO_KEEP = 5
 HISTORY_FILE = 'history.csv'
+RESTAURANT_FILE = 'restaurants.csv'
 
 
 def find_last_visited_restaurants(number_of_restaurant_to_keep):
@@ -43,9 +44,10 @@ def find_last_visited_restaurants(number_of_restaurant_to_keep):
         return restaurant_ids
 
 
-def find_one_restaurant(black_listed_ids):
+def find_one_restaurant(restaurants, black_listed_ids):
     """Find one restaurant which is not in the blacklist
 
+    :param restaurants: List[Restaurant] Available restaurant list
     :param black_listed_ids: List[int] a blacklist id
     :return: Restaurant
     """
@@ -72,25 +74,25 @@ def find_one_restaurant(black_listed_ids):
         loops += 1
 
 
-restaurants = [
-    Restaurant(1, "Take N Eat", "La petite tarte au chocolat"),
-    Restaurant(2, "Take Away", "Le fameux burger vagintarien"),
-    Restaurant(3, "Noii", "On prononce Nouye ou Noye"),
-    Restaurant(4, "Pad Thai", "Si la serveuse comprend la commande"),
-    Restaurant(5, "Sushi", "Sans aucun sushi.... Philosophie !!!! Hakuna Matata"),
-    Restaurant(6, "Petit Japon", "La valeur sûre"),
-    Restaurant(7, "Chinois", "Je nem pas ça"),
-    Restaurant(8, "Pizza", "Nique la pizza Hawaïenne"),
-    Restaurant(9, "Subway", "Les petits cookies Macadamia"),
-    Restaurant(10, "Burger King", "Ils ont la même agence de pub que nous, c'est des copains"),
-    Restaurant(11, "Voyou", "Sauce Dallas"),
-    Restaurant(12, "Five Guys", "LES FRITES"),
-    Restaurant(13, "Joffre", "Un ptit plat du jour"),
-    Restaurant(14, "Schindler ou Paul", "Un p'tit sandwich"),
-    Restaurant(15, "Made in France", "Désespoir"),
-    Restaurant(16, "Biscotto", "C'est loin St Epvre"),
-    Restaurant(17, "Rice and Curry", "Rip ton slibard ce soir"),
-]
+def load_available_restaurants(restaurant_file):
+    exists = os.path.exists(restaurant_file)
+    if not exists:
+        raise Exception('Restaurant file not found')
+
+    with open(restaurant_file, 'r') as file:
+        found_restaurants = []
+        has_header = csv.Sniffer().has_header(file.read())
+        # Reset cursor
+        file.seek(0)
+        reader = csv.reader(file)
+        if has_header:
+            next(reader)
+        for row in reader:
+            elements = row[0].split(';')
+            found_restaurants.append(Restaurant(elements[0], elements[1], elements[2]))
+
+        return found_restaurants
+
 
 """
     MAIN
@@ -99,12 +101,13 @@ restaurants = [
 parser = ArgumentParser()
 parser.add_argument("-l", "--limit", default=NUMBER_OF_VISITED_RESTAURANTS_TO_KEEP,
                     help="Remove the X last visited restaurants")
-args = parser.parse_args()
 
-print('Looping over {} restaurants...'.format(len(restaurants)))
+parser.add_argument("-f", "--file", default=RESTAURANT_FILE,
+                    help="Remove the X last visited restaurants")
+args = parser.parse_args()
 
 already_visited_restaurants = find_last_visited_restaurants(int(args.limit))
 
-the_choosen_one = find_one_restaurant(already_visited_restaurants)
+the_choosen_one = find_one_restaurant(load_available_restaurants(args.file), already_visited_restaurants)
 
 print("On va manger {}. {}".format(the_choosen_one.name, the_choosen_one.comment))
